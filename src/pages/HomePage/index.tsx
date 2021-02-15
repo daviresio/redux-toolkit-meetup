@@ -1,50 +1,48 @@
-import WordModel from "models/word.model";
-import React, { useEffect, useState } from "react";
-import { createWord, getAllWords, updateWord, deleteWord } from "services/word";
+import React, { useEffect } from "react";
 import randomWords from "random-words";
 import Input from "../../components/Input";
 import ListItem from "../../components/ListItem";
 import * as S from "./styled";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "store/reducers";
+import {
+  changeInputValue,
+  requestCreateWord,
+  requestDeleteWord,
+  requestListAllWords,
+  requestUpdateWord,
+} from "store/reducers/wordsReducer";
 
 const HomePage: React.FC = () => {
-  const [words, setWords] = useState<WordModel[]>([]);
-  const [inputValue, setInputValue] = useState("");
+  const { inputValue, words } = useSelector((state: RootState) => state.words);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    getAllWords().then((data) => {
-      setWords(data.sort((a, b) => b.id - a.id));
-    });
+    dispatch(requestListAllWords());
   }, []);
 
-  const changeInputValue = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(evt.target.value);
+  const handleChangeInputValue = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(changeInputValue(evt.target.value));
   };
 
   const handleCreate = async () => {
     if (inputValue.trim() === "") return;
-    const wordCreated = await createWord(inputValue);
-    setWords((prev) => [wordCreated, ...prev]);
-    setInputValue("");
+    dispatch(requestCreateWord(inputValue));
   };
 
   const handleChange = async (id: number, index: number) => {
-    const wordUpdated = await updateWord({ id, name: randomWords() });
-    setWords((prev) => {
-      prev[index].name = wordUpdated.name;
-      return [...prev];
-    });
+    dispatch(requestUpdateWord({ id, name: randomWords() }, index));
   };
 
   const handleDelete = (id: number) => {
-    deleteWord(id);
-    setWords((prev) => prev.filter((word) => word.id !== id));
+    dispatch(requestDeleteWord(id));
   };
 
   return (
     <S.HomePage>
       <Input
         value={inputValue}
-        onChange={changeInputValue}
+        onChange={handleChangeInputValue}
         onEnterPress={handleCreate}
       />
       <S.ListContainer>
